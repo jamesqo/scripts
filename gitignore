@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# very lazy, so this is all there is for now
+# Usage: gitignore C gives your project a C gitignore
+# gitignore VisualStudio uses the VisualStudio.gitignore template
+# You get the idea...
+exec curl -sSLo .gitignore "https://raw.githubusercontent.com/github/gitignore/master/$1.gitignore"
