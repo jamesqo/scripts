@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+script_dir=$(dirname "$0")
+
+arch=x64
+build=false
+build_args=
+config=Release
+coreclr_root=~/Code/git/coreclr
+# TODO: Add support for excluding certain files.
+to=.
+
+while getopts ':C:a:b:dt:' opt; do
+    case "$opt" in
+        C) coreclr_root=$OPTARG ;;
+        a) arch=$OPTARG ;;
+        b) build=true; build_args=$OPTARG ;;
+        d) config=Debug ;;
+        t) to=$OPTARG ;;
+        '?') echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
+    esac
+done
+
+coreclr_bins=$coreclr_root/bin/Product/Windows_NT.$arch.$config
+
+if "$build"; then
+    pushd "$coreclr_root"
+    "$script_dir/build_mscorlib" $build_args # $build_args is intentionally unquoted so more than 1 arg can be passed
+    popd
+fi
+
+# Copy all of the files in the bin directory
+cp "$coreclr_root"/* "$to"
+
+# Copy the PDBs as well
+cp "$coreclr_root/PDB"/* "$to"

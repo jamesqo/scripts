@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+debug=false
+loud=false
+silent=false
+
+while getopts ':dl' opt; do
+    case "$opt" in
+        d) debug=true ;;
+        l) loud=true ;;
+        s) silent=true ;; # silence even errors
+        '?') echo "Unknown option: -$OPTARG" >&2; exit 1 ;;
+    esac
+done
+
+output_file=/dev/null
+if "$loud"; then
+    output_file=/dev/stdout
+fi
+
+error_file=/dev/stdout
+if "$silent"; then
+    error_file=/dev/null
+fi
+
+config=Release
+if "$debug"; then
+    config=Debug
+fi
+
+exec dotnet publish -c "$config" -o publish >"$output_file" 2>"$error_file"

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+script_dir=$(dirname "$0")
+
+app_args=
+copy=false
+copy_args=
+loud=false
+publish=false
+publish_args=
+
+while getopts ':a:c:lp:' opt; do
+    case "$opt" in
+        a) app_args=$OPTARG ;;
+        c) copy=true; copy_args=$OPTARG ;;
+        l) loud=true ;;
+        p) publish=true; publish_args=$OPTARG ;;
+        '?') echo "Unknown option: -$OPTARG" >&2; exit 1 ;;
+    esac
+
+    # TODO: handle -- so you can write run_app -- [app args]
+done
+
+output_file=/dev/null
+if "$loud"; then
+    output_file=/dev/stdout
+fi
+
+# Publish before copying.
+if "$publish"; then
+    "$script_dir/publish_app" $publish_args >"$output_file"
+fi
+
+if "$copy"; then
+    "$script_dir/copy_coreclr" -t publish $copy_args >"$output_file"
+fi
+
+# Run the app, which will have the same name as the dir we're in
+name=$(basename "$PWD")
+exec "$PWD/publish/$name" $app_args # we do not want to redirect this

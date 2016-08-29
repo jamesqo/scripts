@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+arch=x64
+config=release
+
+while getopts ':a:d' opt; do
+    case "$opt" in
+        a) arch=$OPTARG ;;
+        d) config=debug ;;
+        '?') echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
+    esac
+done
+
+exec cmd //c build "$arch" "$config" skiptests skipnative skipbuildpackages
