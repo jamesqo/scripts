@@ -30,7 +30,7 @@ if "$build"; then
 fi
 
 # Copy all of the files in the bin directory
-cp "$coreclr_root"/* "$to"
+cp "$coreclr_bins"/* "$to" 2>/dev/null
 
 # Copy the PDBs as well
-cp "$coreclr_root/PDB"/* "$to"
+cp "$coreclr_bins/PDB"/* "$to"

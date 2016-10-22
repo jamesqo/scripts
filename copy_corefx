@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+assembly=
+config=
+corefx_root=~/Code/git/corefx
+to=
+
+while getopts ':a:c:r:t:' opt; do
+    case "$opt" in
+        a) assembly=$OPTARG ;;
+        c) config=$OPTARG ;;
+        r) corefx_root=$OPTARG ;;
+        t) to=$OPTARG ;;
+    esac
+done
+
+if [ -z "$assembly" ] || [ -z "$config" ] || [ -z "$to" ]; then
+    echo 'Please enter an assembly and a config and a destination.' >&2
+    exit 1
+fi
+
+winany=
+dbgrel=
+
+# Parse the actual config
+components=(${config//-/ }) # split by -
+for c in "${components[@]}"; do
+    case "$c" in
+        win) winany=Windows_NT ;;
+        any) winany=AnyOS ;;
+        dbg) dbgrel=Debug ;;
+        rel) dbgrel=Release ;;
+        *) echo "Invalid config arg: $c" >&2; exit 1 ;;
+    esac
+done
+
+if [ -z "$winany" ] || [ -z "$dbgrel" ]; then
+    # Future note to self: prefer " to ' in messages.
+    # This is easier to change when you realize you need to interpolate strings.
+    echo "Please enter win/any and dbg/rel in your config." >&2
+    echo "For example, use win-rel if you want Windows_NT.AnyCPU.Release binaries." >&2
+    exit 1
+fi
+
+config=${winany}.AnyCPU.${dbgrel}
+
+bin_dir=$corefx_root/bin/$config/$assembly
+
+# Finally, copy (just) the files.
+# Redirect stderr to silence cp saying it can't overwrite dirs w/o -r,
+# since that is the intended effect.
+cp "$bin_dir"/* "$to" 2>/dev/null || true

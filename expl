@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Like explorer, but shorter and accepts Unix paths.
+
+wpath=$(cygpath -w "$1")
+
+exec explorer "$wpath"

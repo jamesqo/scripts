@@ -18,7 +18,7 @@ if "$loud"; then
     output_file=/dev/stdout
 fi
 
-error_file=/dev/stdout
+error_file=/dev/stderr
 if "$silent"; then
     error_file=/dev/null
 fi

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+loc=~/AppData/Local/Programs/Git/git-bash.exe
+loc=$(cygpath -w "$loc")
+
+cd / # For some reason if we start in ~, the display text of the new git-bash inst will be C:/Users/James.
+exec start "$loc" --cd-to-home
