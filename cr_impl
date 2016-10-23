@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+die()
+{
+    echo "$@" >&2
+    exit 1
+}
+
+process_times()
+{
+    oldtime=$1; newtime=$2
+
+    if [ "$newtime" -ge "$oldtime" ]; then
+        percentdiff=$(((newtime-oldtime)/oldtime*100))
+        echo "REGRESSION by ${percentdiff}%. ${oldtime} -> ${newtime}" >&2
+    else
+        percentdiff=$(((oldtime-newtime)/oldtime*100))
+        echo "Improvement by ${percentdiff}%. ${oldtime} -> ${newtime}"
+    fi
+}
+
+# Note: opts to this script have to come before the filenames.
+
+nl_before_headers=false
+
+while getopts ':n:' opt; do
+    case "$opt" in
+        n) nl_before_headers=true ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+file1=$1
+file2=$2
+
+old=
+
+# Used for storing the times read in.
+oldvec=()
+newvec=()
+
+while IFS= read -r left && read -r right <&3; do
+    [ -z "$left" ] && continue # Skip empty lines
+
+    if [ "${left#--- }" != "$left" ]; then
+        # Look for '--- OLD' or '--- NEW'
+        left=${left#--- } # Trim leading '--- '
+        case "${left,,}" in # Lowercase
+            old) old=left ;;
+            new) old=right ;;
+        esac
+    elif [ "${left#*** }" != "$left" ]; then
+        # Found a header in the form '*** text'. Echo the text.
+        "$nl_before_headers" && echo
+        echo "${left#*** }"
+    else
+        # TimeMillis1,TimeMillis2,..TimeMillisN
+
+        # If we got to this pt then we should have passed a --- line already.
+        [ -z "$old" ] && die "We didn't pass a --- line yet."
+        
+        # Split the times by commas (no spaces) into vectors
+        case "$old" in
+            left) oldvec=(${left//,/ }); newvec=(${right//,/ }) ;;
+            right) oldvec=(${right//,/ }); newvec=(${left//,/ }) ;;
+        esac
+
+        for i in "${!oldvec[@]}"; do # Loop over each vec
+            process_times "${oldvec[i]}" "${newvec[i]}"
+        done
+    fi
+done \
+<"$file1" 3<"$file2"
