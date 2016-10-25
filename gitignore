@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 
+# TODO: Is this actually necessary?
+urlencode()
+{
+    # From http://unix.stackexchange.com/questions/159253/decoding-url-encoding-percent-encoding
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-]) printf "$c" ;;
+            *) printf '%%%02X' "'$c"
+        esac
+    done
+}
+
 # very lazy, so this is all there is for now
 # Usage: gitignore C gives your project a C gitignore
 # gitignore VisualStudio uses the VisualStudio.gitignore template
 # You get the idea...
-exec curl -sSLo .gitignore "https://raw.githubusercontent.com/github/gitignore/master/$1.gitignore"
+exec curl -sSLo .gitignore "https://raw.githubusercontent.com/github/gitignore/master/$(urlencode "$1.gitignore")"

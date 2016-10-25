@@ -10,11 +10,16 @@ process_times()
 {
     oldtime=$1; newtime=$2
 
+    # rm carriage returns
+    oldtime=${oldtime//$'\r'/}
+    newtime=${newtime//$'\r'/}
+
+    # TODO: Add space padding.
     if [ "$newtime" -ge "$oldtime" ]; then
-        percentdiff=$(((newtime-oldtime)/oldtime*100))
-        echo "REGRESSION by ${percentdiff}%. ${oldtime} -> ${newtime}" >&2
+        percentdiff=$(((newtime-oldtime)*100/oldtime))
+        echo "REGRESSION by ${percentdiff}%. ${oldtime} -> ${newtime}" # >&2
     else
-        percentdiff=$(((oldtime-newtime)/oldtime*100))
+        percentdiff=$(((oldtime-newtime)*100/oldtime))
         echo "Improvement by ${percentdiff}%. ${oldtime} -> ${newtime}"
     fi
 }
@@ -23,7 +28,7 @@ process_times()
 
 nl_before_headers=false
 
-while getopts ':n:' opt; do
+while getopts ':n' opt; do
     case "$opt" in
         n) nl_before_headers=true ;;
     esac
@@ -46,6 +51,7 @@ while IFS= read -r left && read -r right <&3; do
     if [ "${left#--- }" != "$left" ]; then
         # Look for '--- OLD' or '--- NEW'
         left=${left#--- } # Trim leading '--- '
+        left=${left//$'\r'/} # Remove carriage returns
         case "${left,,}" in # Lowercase
             old) old=left ;;
             new) old=right ;;
@@ -66,7 +72,7 @@ while IFS= read -r left && read -r right <&3; do
             right) oldvec=(${right//,/ }); newvec=(${left//,/ }) ;;
         esac
 
-        for i in "${!oldvec[@]}"; do # Loop over each vec
+        for i in "${!oldvec[@]}"; do # Loop over indices in each vec
             process_times "${oldvec[i]}" "${newvec[i]}"
         done
     fi

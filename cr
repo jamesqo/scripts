@@ -26,16 +26,16 @@ fi
 "$script_dir/run_app" -p | tee /tmp/$$_o >"$out_stream"
 
 # Copy coreclr/corefx binaries if requested.
-if [ -n "${clr_args[@]}" ]; then
+if [ "${#clr_args[@]}" -ne 0 ]; then
     "$script_dir/copy_coreclr" -t publish "${clr_args[@]}"
 fi
 
-if [ -n "${fx_args[@]}" ]; then
+if [ "${#fx_args[@]}" -ne 0 ]; then
     "$script_dir/copy_corefx" -t publish "${fx_args[@]}"
 fi
 
 # Run the app again...
-"$script_dir/run_app" -p | tee /tmp/$$_n >"$out_stream"
+DOTNET_TESTING_NEW=1 "$script_dir/run_app" -p | tee /tmp/$$_n >"$out_stream" # TODO: We need to clean up these files
 
 # Call through to another script to do the actual cmp
-exec "$script_dir/cr_impl" -n "$$_o" "$$_n"
+exec "$script_dir/cr_impl" -n "/tmp/$$_o" "/tmp/$$_n"

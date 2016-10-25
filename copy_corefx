@@ -47,6 +47,5 @@ config=${winany}.AnyCPU.${dbgrel}
 bin_dir=$corefx_root/bin/$config/$assembly
 
 # Finally, copy (just) the files.
-# Redirect stderr to silence cp saying it can't overwrite dirs w/o -r,
-# since that is the intended effect.
-cp "$bin_dir"/* "$to" 2>/dev/null || true
+# Using find -exec is slower than cp src/* dest 2>/dev/null, but more reliable.
+find "$bin_dir" -maxdepth 1 -type f -exec cp {} "$to" \;
