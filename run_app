@@ -4,18 +4,17 @@
 script_dir=$(dirname "${BASH_SOURCE[0]}")
 
 app_args=
-copy_coreclr=false
-copy_corefx=false
-corefx_args=
+clr_args=()
+fx_args=()
 loud=false
 publish=false
 silent=false
 
-while getopts ':a:cf:lps' opt; do
+while getopts ':a:c:f:lps' opt; do
     case "$opt" in
-        a) app_args=$OPTARG ;;
-        c) copy_coreclr=true ;; # TODO: Add support for passing args.
-        f) copy_corefx=true; corefx_args=$OPTARG ;;
+        a) app_args=$OPTARG ;; # TODO: Better support for passing args.
+        c) clr_args+=("$OPTARG") ;;
+        f) fx_args+=("$OPTARG") ;;
         l) loud=true ;;
         p) publish=true ;; # TODO: Add support for passing args.
         s) silent=true ;;
@@ -41,12 +40,12 @@ if "$publish"; then
     "$script_dir/publish_app" >"$output_file" 2>"$error_file"
 fi
 
-if "$copy_coreclr"; then
-    "$script_dir/copy_coreclr" -t publish >"$output_file" 2>"$error_file"
+if [ "${#clr_args[@]}" -ne 0 ]; then
+    "$script_dir/copy_coreclr" -t publish "${clr_args[@]}" >"$output_file" 2>"$error_file"
 fi
 
-if "$copy_corefx"; then
-    "$script_dir/copy_corefx" -t publish $corefx_args >"$output_file" 2>"$error_file"
+if [ "${#fx_args[@]}" -ne 0 ]; then
+    "$script_dir/copy_corefx" -t publish "${fx_args[@]}" >"$output_file" 2>"$error_file"
 fi
 
 # Run the app, which will have the same name as the dir we're in

@@ -5,18 +5,18 @@ script_dir=$(dirname "${BASH_SOURCE[0]}")
 
 clr_args=()
 fx_args=()
-verbose=false
+silent=false
 
-while getopts ':c:f:v' opt; do
+while getopts ':c:f:s' opt; do
     case "$opt" in
         c) clr_args+=("$OPTARG") ;;
         f) fx_args+=("$OPTARG") ;;
-        v) verbose=true ;;
+        s) silent=true ;;
     esac
 done
 
 out_stream=/dev/stdout
-if ! "$verbose"; then
+if "$silent"; then
     out_stream=/dev/null
 fi
 
@@ -35,7 +35,7 @@ if [ "${#fx_args[@]}" -ne 0 ]; then
 fi
 
 # Run the app again...
-DOTNET_TESTING_NEW=1 "$script_dir/run_app" -p | tee /tmp/$$_n >"$out_stream" # TODO: We need to clean up these files
+DOTNET_TESTING_NEW=1 "$script_dir/run_app" | tee /tmp/$$_n >"$out_stream" # TODO: We need to clean up these files
 
 # Call through to another script to do the actual cmp
 exec "$script_dir/cr_impl" -n "/tmp/$$_o" "/tmp/$$_n"

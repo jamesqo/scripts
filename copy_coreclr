@@ -9,12 +9,14 @@ config=Release
 coreclr_root=~/Code/git/coreclr
 # TODO: Add support for excluding certain files.
 to=.
+just_corelib=false
 
-while getopts ':C:a:b:dt:' opt; do
+while getopts ':C:a:b:cdt:' opt; do
     case "$opt" in
         C) coreclr_root=$OPTARG ;;
         a) arch=$OPTARG ;;
         b) build=true; build_args=$OPTARG ;;
+        c) just_corelib=true ;;
         d) config=Debug ;;
         t) to=$OPTARG ;;
         '?') echo "Invalid option: -$OPTARG" >&2; exit 1 ;;
@@ -30,7 +32,11 @@ if "$build"; then
 fi
 
 # Copy all of the files in the bin directory
-cp "$coreclr_bins"/* "$to" 2>/dev/null
+if "$just_corelib"; then
+    cp "$coreclr_bins/System.Private.CoreLib.ni.dll" "$to"
+else
+    cp "$coreclr_bins"/* "$to" 2>/dev/null
+fi
 
 # Copy the PDBs as well
 cp "$coreclr_bins/PDB"/* "$to"

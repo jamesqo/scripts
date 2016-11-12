@@ -1,26 +1,53 @@
 #!/usr/bin/env bash
 
+# Sample output
+# [header]
+# REGRESSION by 6%. [time1] -> [time2]. GCs INCREASED by 242 from [num1] to [num2].
+# Improvement by 7%. [time1] -> [time2]. GCs decreased by 150 from [num1] to [num2].
+# Improvment by 
+
+# How the data is encoded:
+# *** header
+# @ time1/num1,time2/num2
+
 die()
 {
     echo "$@" >&2
     exit 1
 }
 
-process_times()
+process_times_and_gcs()
 {
-    oldtime=$1; newtime=$2
+    oldtime=${1%%/*}; oldgc=${1##*/} # Time/Gc
+    newtime=${2%%/*}; newgc=${2##*/}
 
     # rm carriage returns
     oldtime=${oldtime//$'\r'/}
     newtime=${newtime//$'\r'/}
+    oldgc=${oldgc//$'\r'/}
+    newgc=${newgc//$'\r'/}
 
     # TODO: Add space padding.
+    # TODO: Handle when both times are the same (rare but possible).
     if [ "$newtime" -ge "$oldtime" ]; then
         percentdiff=$(((newtime-oldtime)*100/oldtime))
-        echo "REGRESSION by ${percentdiff}%. ${oldtime} -> ${newtime}" # >&2
+        echo -n "REGRESSION by ${percentdiff}%. ${oldtime} -> ${newtime}." # >&2
     else
         percentdiff=$(((oldtime-newtime)*100/oldtime))
-        echo "Improvement by ${percentdiff}%. ${oldtime} -> ${newtime}"
+        echo -n "Improvement by ${percentdiff}%. ${oldtime} -> ${newtime}."
+    fi
+
+    echo -n ' '
+
+    if [ "$newgc" -gt "$oldgc" ]; then
+        gcinc=$((newgc-oldgc))
+        echo "GCs INCREASED by ${gcinc} from ${oldgc} to ${newgc}."
+    elif [ "$oldgc" -gt "$newgc" ]; then
+        gcdec=$((oldgc-newgc))
+        echo "GCs decreased by ${gcdec} from ${oldgc} to ${newgc}."
+    else
+        # Same. Don't say anything.
+        echo
     fi
 }
 
@@ -28,6 +55,7 @@ process_times()
 
 nl_before_headers=false
 
+# TODO: Add opt to only print regressions.
 while getopts ':n' opt; do
     case "$opt" in
         n) nl_before_headers=true ;;
@@ -56,12 +84,14 @@ while IFS= read -r left && read -r right <&3; do
             old) old=left ;;
             new) old=right ;;
         esac
-    elif [ "${left#*** }" != "$left" ]; then
+    elif [ "${left#'*** '}" != "$left" ]; then
         # Found a header in the form '*** text'. Echo the text.
         "$nl_before_headers" && echo
-        echo "${left#*** }"
-    else
-        # TimeMillis1,TimeMillis2,..TimeMillisN
+        echo "${left#'*** '}"
+    elif [ "${left#@ }" != "$left" ]; then
+        # @ TimeMillis1/Gc1,TimeMillis2/Gc2,..TimeMillisN/GcN
+        left=${left#@ }
+        right=${right#@ }
 
         # If we got to this pt then we should have passed a --- line already.
         [ -z "$old" ] && die "We didn't pass a --- line yet."
@@ -73,7 +103,7 @@ while IFS= read -r left && read -r right <&3; do
         esac
 
         for i in "${!oldvec[@]}"; do # Loop over indices in each vec
-            process_times "${oldvec[i]}" "${newvec[i]}"
+            process_times_and_gcs "${oldvec[i]}" "${newvec[i]}"
         done
     fi
 done \

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# Note: The process will still be tied to its parent.
+exec "$@" >/dev/null 2>&1 &
